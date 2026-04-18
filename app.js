@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let projects = [];
     let currentProjectId = null;
     let project = {};
+    let isGapiInitialized = false;
 
     function createDefaultProject() {
         return {
@@ -187,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiKey: window.GAPI_API_KEY || '',
                 discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
             });
+            isGapiInitialized = true;
+            console.log('GAPI initialized successfully');
         } catch (e) {
             console.error('GAPI init failed', e);
         }
@@ -274,13 +277,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function syncToDrive(projectData) {
-        if (!accessToken || saveLocationSelect.value !== 'drive') return;
+        if (!isGapiInitialized || !accessToken || saveLocationSelect.value !== 'drive') {
+            console.log("Drive sync skipped: GAPI not ready or user not logged in.'");
+            return;
+        }
 
         const folderId = await getOrCreateDriveFolder();
         if (!folderId) {
             setSaveStatus('error');
             return;
         }
+
 
         const projectJson = JSON.stringify(projectData);
         const fileContent = new Blob([projectJson], { type: 'application/json' });
