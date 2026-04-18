@@ -1,6 +1,4 @@
-const env = {
-    GAPI_CLIENT_ID: process.env.NEXT_PUBLIC_GAPI_CLIENT_ID,
-    GAPI_API_KEY: process.env.NEXT_PUBLIC_GAPI_API_KEY,
+const GAPI_CONFIG = {
+  GAPI_CLIENT_ID: "REPLACE_GAPI_CLIENT_ID",
+  GAPI_API_KEY: "REPLACE_GAPI_API_KEY",
 };
-
-module.exports = { env };
