@@ -1,7 +1,7 @@
-window.gapiLoaded = function() {
+window.gapiLoaded = function () {
     if (window.initializeGapiClient) window.initializeGapiClient();
 };
-window.gisLoaded = function() {
+window.gisLoaded = function () {
     if (window.initializeGisClient) window.initializeGisClient();
 };
 
@@ -181,20 +181,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let accessToken = null;
     let driveFolderId = null;
 
-    window.initializeGapiClient = async function() {
+    window.initializeGapiClient = async function () {
         try {
             await gapi.client.init({
-                apiKey: typeof GAPI_API_KEY !== 'undefined' ? GAPI_API_KEY : '',
+                apiKey: window.GAPI_API_KEY || '',
                 discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
             });
-        } catch(e) {
+        } catch (e) {
             console.error('GAPI init failed', e);
         }
     };
 
-    window.initializeGisClient = function() {
+    window.initializeGisClient = function () {
         tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: typeof GAPI_CLIENT_ID !== 'undefined' ? GAPI_CLIENT_ID : '',
+            client_id: window.GAPI_CLIENT_ID || '',
             scope: "https://www.googleapis.com/auth/drive.file",
             callback: (resp) => {
                 if (resp.error !== undefined) {
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     gdriveLoginBtn.addEventListener('click', () => {
         if (tokenClient) {
-            tokenClient.requestAccessToken({prompt: 'consent'});
+            tokenClient.requestAccessToken({ prompt: 'consent' });
         } else {
             alert("Google APIが読み込めていません");
         }
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function syncToDrive(projectData) {
         if (!accessToken || saveLocationSelect.value !== 'drive') return;
-        
+
         const folderId = await getOrCreateDriveFolder();
         if (!folderId) {
             setSaveStatus('error');
@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const projectJson = JSON.stringify(projectData);
-        const fileContent = new Blob([projectJson], {type: 'application/json'});
+        const fileContent = new Blob([projectJson], { type: 'application/json' });
         const fileName = `${projectData.fileName}_${projectData.id}.json`;
 
         try {
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = `https://www.googleapis.com/upload/drive/v3/files/${projectData.googleDriveFileId}?uploadType=media`;
                 const response = await fetch(url, {
                     method: 'PATCH',
-                    headers: new Headers({'Authorization': 'Bearer ' + accessToken}),
+                    headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
                     body: fileContent
                 });
                 if (!response.ok) throw new Error('Drive upload failed');
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const url = `https://www.googleapis.com/upload/drive/v3/files/${projectData.googleDriveFileId}?uploadType=media`;
                     await fetch(url, {
                         method: 'PATCH',
-                        headers: new Headers({'Authorization': 'Bearer ' + accessToken}),
+                        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
                         body: fileContent
                     });
                 } else {
@@ -315,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         'mimeType': 'application/json'
                     };
                     const form = new FormData();
-                    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
+                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
                     form.append('file', fileContent);
                     const url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
                     const response = await fetch(url, {
                         method: 'POST',
-                        headers: new Headers({'Authorization': 'Bearer ' + accessToken}),
+                        headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
                         body: form
                     });
                     if (!response.ok) throw new Error('Drive creation failed');
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             setSaveStatus('saved');
-        } catch(e) {
+        } catch (e) {
             console.error('Sync failed', e);
             setSaveStatus('error');
         }
