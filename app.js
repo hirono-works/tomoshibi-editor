@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProjectId = null;
     let project = {};
     let isGapiInitialized = false;
+    let currentFileHandle = null;
 
     function createDefaultProject() {
         return {
@@ -370,6 +371,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
+    async function saveToLocalFile(forceNewSave = false) {
+        const text = domToText(editor);
+
+        try {
+            if (!currentFileHandle || forceNewSave) {
+                const options = {
+                    suggestedName: `${fileNameInput.value || '無題'}.txt`,
+                    types: [{
+                        description: 'Text Files',
+                        accept: {
+                            'text/plain': ['.txt'],
+                        }
+                    }],
+                };
+                currentFileHandle = await window.showSaveFilePicker(options);
+            }
+
+            // 書き込み権限を確認
+            const options = { mode: 'readwrite' };
+            if ((await currentFileHandle.queryPermission(options)) !== 'granted') {
+                if ((await currentFileHandle.requestPermission(options)) !== 'granted') {
+                    alert('ファイルへの書き込み権限が得られませんでした。');
+                    setSaveStatus('error');
+                    return;
+                }
+            }
+
+            const writable = await currentFileHandle.createWritable();
+            await writable.write(text);
+            await writable.close();
+
+            const file = await currentFileHandle.getFile();
+            project.fileName = file.name.replace(/\.[^/.]+$/, "");
+            fileNameInput.value = project.fileName;
+
+            // ローカルストレージの状態も同期
+            saveProject(false);
+
+            showTomoshiToast(`「${file.name}」に保存しました`);
+            setSaveStatus('saved');
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                console.log('Save operation was cancelled by the user.');
+                setSaveStatus('saved');
+            } else {
+                console.error('File save error:', err);
+                alert('ファイルの保存中にエラーが発生しました。');
+                setSaveStatus('error');
+            }
+        }
+    }
+
     async function saveProject(isManualEvent = false) {
         if (!currentProjectId) return;
 
@@ -409,13 +462,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (isManualEvent) {
-            showTomoshiToast('プロジェクトを保存しました');
+            await saveToLocalFile(false);
         }
     }
 
     function openProject(id) {
         const found = projects.find(p => p.id === id);
         if (found) {
+            currentFileHandle = null;
             project = JSON.parse(JSON.stringify(found)); // deep copy
             currentProjectId = id;
 
@@ -465,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function goHome() {
         if (currentProjectId) saveProject();
         currentProjectId = null;
+        currentFileHandle = null;
         appLayout.classList.add('hidden');
         homeScreen.classList.remove('hidden');
         renderHome();
@@ -518,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Home Screen Events ---
     createNewProjectBtn.addEventListener('click', () => {
+        currentFileHandle = null;
         const newProj = createDefaultProject();
         projects.push(newProj);
         saveProjectsList();
@@ -934,39 +990,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- File IO ---
 
-    importBtn.addEventListener('click', () => fileInput.click());
+    importBtn.addEventListener('click', async () => {
+        try {
+            const [handle] = await window.showOpenFilePicker({
+                types: [
+                    {
+                        description: 'Text Files or Word Documents',
+                        accept: {
+                            'text/plain': ['.txt'],
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+                        }
+                    }
+                ],
+                excludeAcceptAllOption: true,
+                multiple: false
+            });
 
-    fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+            currentFileHandle = handle;
+            const file = await handle.getFile();
+            
+            project.fileName = file.name.replace(/\.[^/.]+$/, "");
+            fileNameInput.value = project.fileName;
 
-        project.fileName = file.name.replace(/\.[^/.]+$/, "");
-        fileNameInput.value = project.fileName;
-
-        if (file.name.endsWith('.docx')) {
-            const arrayBuffer = await file.arrayBuffer();
-            const result = await mammoth.convertToHtml({ arrayBuffer });
-            editor.innerHTML = sanitizeHtml(result.value);
-        } else {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                let text = e.target.result;
+            if (file.name.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.convertToHtml({ arrayBuffer });
+                editor.innerHTML = sanitizeHtml(result.value);
+            } else {
+                const text = await file.text();
                 // Parse Ruby from imported text
-                text = parseRubyToHTML(text);
-                const html = text.split('\n').map(l => {
+                const parsedText = parseRubyToHTML(text);
+                const html = parsedText.split('\n').map(l => {
                     return l === '' ? '<p><br></p>' : `<p>${l}</p>`;
                 }).join('');
-                // Note: sanitization already allows Ruby and RT after parsed
                 editor.innerHTML = sanitizeHtml(html);
-                updateStats();
-                saveProject();
-            };
-            reader.readAsText(file);
+            }
+            updateStats();
+            saveProject(false);
+            showTomoshiToast(`「${file.name}」を読み込みました`);
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                console.error('File import error:', err);
+                alert('ファイルの読み込み中にエラーが発生しました。');
+            }
         }
-        updateStats();
-        saveProject();
-        // Reset file input
-        fileInput.value = '';
     });
 
     function domToText(element) {
