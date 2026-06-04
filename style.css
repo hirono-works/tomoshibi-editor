@@ -849,3 +849,15 @@ input:checked+.slider:before {
     letter-spacing: 0.1em;
     font-size: 1.0rem;
 }
+
+/* 開発中機能の無効化ラッパー */
+.disabled-wrapper {
+    cursor: not-allowed !important;
+    display: inline-block;
+    width: 100%;
+}
+
+.disabled-wrapper > * {
+    pointer-events: none !important;
+    opacity: 0.6 !important;
+}
