@@ -194,34 +194,38 @@
                                 <i data-lucide="download"></i>
                                 <span>Text出力</span>
                             </button>
-                            <button id="exportWord" class="action-btn">
-                                <i data-lucide="download"></i>
-                                <span>Word出力</span>
-                            </button>
+                            <div class="disabled-wrapper" title="現在開発中です">
+                                <button id="exportWord" class="action-btn" style="width: 100%;">
+                                    <i data-lucide="download"></i>
+                                    <span>Word出力</span>
+                                </button>
+                            </div>
                         </div>
                         <input type="file" id="fileInput" hidden accept=".txt,.docx">
                     </div>
                     <div class="settings-section">
                         <h3>クラウド連携</h3>
-                        <div class="setting-item">
-                            <p style="font-size: 0.8rem; color: #888; margin-bottom: 8px;">Google
-                                Driveと連携してデータを保存・読込できます</p>
-                            <button id="gdriveLoginBtn" class="action-btn">
-                                <i data-lucide="cloud"></i>
-                                <span>Google Drive 連携</span>
-                            </button>
-                            <button id="gdriveLogoutBtn" class="action-btn hidden">
-                                <i data-lucide="cloud-off"></i>
-                                <span>連携解除</span>
-                            </button>
-                        </div>
+                        <div class="disabled-wrapper" title="現在開発中です">
+                            <div class="setting-item">
+                                <p style="font-size: 0.8rem; color: #888; margin-bottom: 8px;">Google
+                                    Driveと連携してデータを保存・読込できます</p>
+                                <button id="gdriveLoginBtn" class="action-btn">
+                                    <i data-lucide="cloud"></i>
+                                    <span>Google Drive 連携</span>
+                                </button>
+                                <button id="gdriveLogoutBtn" class="action-btn hidden">
+                                    <i data-lucide="cloud-off"></i>
+                                    <span>連携解除</span>
+                                </button>
+                            </div>
 
-                        <div class="setting-item hidden" id="saveLocationToggle">
-                            <label>保存先</label>
-                            <select id="saveLocationSelect">
-                                <option value="local">端末（ブラウザ）のみ</option>
-                                <option value="drive">端末 ＋ Google Drive</option>
-                            </select>
+                            <div class="setting-item hidden" id="saveLocationToggle">
+                                <label>保存先</label>
+                                <select id="saveLocationSelect">
+                                    <option value="local">端末（ブラウザ）のみ</option>
+                                    <option value="drive">端末 ＋ Google Drive</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
